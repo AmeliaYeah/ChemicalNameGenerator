@@ -4,6 +4,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+// Quick and dirty replacement to the "Utils" methods which belonged to a script I've 
+// long since deleted.
+public static class ChemicalGenUtils
+{
+    // THIS WILL THROW AN ERROR FOR ROMAN NUMERALS > 10
+    // For now atleast, this script probably won't need to go above 10. Just keep this in mind.
+    public static string[] RomanNumerals = {"I","II","III","IV","V","VI","VII","VIII","IX","X"}; 
+
+    // Unicode doesn't support some superscript characters (1, 2, and 3 mainly)
+    // Because of this, the function just returns the "power to" symbol along with the number.
+    // Feel free to change this method to whatever you want. It's just here as a sort of placeholder almost.
+    public static string Superscript(int numberRaw)
+    {
+        return "^"+numberRaw.ToString();
+    }
+}
+
 [Serializable]
 public class BaseChemicalElement
 {
@@ -38,7 +55,8 @@ public class BaseChemicalElement
             //Removes the prefix vowel so the element name beginning and prefix ending don't have 2 consecutive vowels
             //  (It would sound rather weird to have a compound called "Sulfur HeptaOxide" right?)
             char prefixEnd = prefix.Last();
-            if (Utils.StringManipulation.vowels.Contains(prefixEnd) && Utils.StringManipulation.vowels.Contains(name[0]))
+            string vowels = "aeiou";
+            if (vowels.Contains(prefixEnd) && vowels.Contains(name[0]))
             {
                 prefix = prefix.Substring(0, prefix.Length - 1);
             }
@@ -66,7 +84,8 @@ public class BaseChemicalElement
             }
         }
 
-        return Utils.StringManipulation.CapitalizeFirstLetter(prefix + name);
+        string completedStr = prefix+name;
+        return char.ToUpper(completedStr[0]) + completedStr.Substring(1,completedStr.Length-1); //essentially just capitalizes the first letter
     }
 
     protected static int AtomsRequiredToBalance(int chargeRaw, int opposingCharge)
@@ -187,7 +206,8 @@ public class TransitionElement : BaseChemicalElement
         //Exit if there are no matches; return the compound if there are
         if (atoms == 0 && charge == 0) return null;
         else
-            return new Compound(name + " (" + Utils.StringManipulation.Roman.NumberToRomanNumeral(charge) + ") " + ElementNameToIon(element.Item1.name),
+            //I subtract "1" from charge since we're dealing with indexes here.
+            return new Compound(name + " (" + ChemicalGenUtils.RomanNumerals[charge-1] + ") " + ElementNameToIon(element.Item1.name),
                 new Dictionary<string, int>() { { symbol, atoms }, { element.Item1.symbol, element.Item2 } });
     }
 }
@@ -209,7 +229,7 @@ public class Compound
 
         foreach(KeyValuePair<string, int> symbol in symbols)
         {
-            chemicalFormat += symbol.Key + Utils.StringManipulation.NumberToSubscript(symbol.Value);
+            chemicalFormat += symbol.Key + ChemicalGenUtils.Superscript(symbol.Value);
         }
     }
 }
@@ -221,7 +241,7 @@ public static class ElementalCompoundGenerator
     //Function that initializes the periodic table textassets
     public static void Init()
     {
-        foreach(TextAsset asset in Resources.LoadAll<TextAsset>("TextAssets/PeriodicElementInitialization"))
+        foreach(TextAsset asset in Resources.LoadAll<TextAsset>("PeriodicElementInitialization"))
         {
             ElementType? type = null;
             foreach(string element in asset.text.Split('\n'))
